@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Defend Your Weekend</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;700;800&display=swap" rel="stylesheet"/>
+<style>
+/* ─── Reset ─────────────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;overflow:hidden;background:#1e1e1e;color:#fff;
+  font-family:'Noto Sans',sans-serif;cursor:none;user-select:none;}
+
+/* ─── Background Grid ────────────────────────────────────────────────── */
+#bg-grid{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(246,75,127,0.045) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(246,75,127,0.045) 1px,transparent 1px);
+  background-size:48px 48px;}
+
+/* ─── Custom Cursor ──────────────────────────────────────────────────── */
+#cursor{position:fixed;width:96px;height:96px;pointer-events:none;z-index:9999;
+  transform:translate(-50%,-50%);}
+#cursor .c-ring{position:absolute;inset:0;border:2px solid rgba(246,75,127,0.4);border-radius:50%;}
+#cursor .c-h{position:absolute;top:50%;left:0;right:0;height:2px;background:#f64b7f;transform:translateY(-50%);}
+#cursor .c-v{position:absolute;left:50%;top:0;bottom:0;width:2px;background:#f64b7f;transform:translateX(-50%);}
+#cursor .c-dot{position:absolute;top:50%;left:50%;width:8px;height:8px;background:#f64b7f;
+  border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 15px #f64b7f;}
+#cursor .c-tl{position:absolute;top:0;left:0;width:16px;height:16px;border-top:2px solid #f64b7f;border-left:2px solid #f64b7f;}
+#cursor .c-tr{position:absolute;top:0;right:0;width:16px;height:16px;border-top:2px solid #f64b7f;border-right:2px solid #f64b7f;}
+#cursor .c-bl{position:absolute;bottom:0;left:0;width:16px;height:16px;border-bottom:2px solid #f64b7f;border-left:2px solid #f64b7f;}
+#cursor .c-br{position:absolute;bottom:0;right:0;width:16px;height:16px;border-bottom:2px solid #f64b7f;border-right:2px solid #f64b7f;}
+
+/* ─── Screens ────────────────────────────────────────────────────────── */
+.screen{position:fixed;inset:0;display:none;flex-direction:column;
+  align-items:center;justify-content:center;z-index:10;}
+.screen.active{display:flex;}
+
+/* ─── Badge ──────────────────────────────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;gap:8px;
+  border:1px solid #f64b7f;background:rgba(246,75,127,0.12);
+  border-radius:9999px;padding:9px 30px;
+  font-size:18px;font-weight:300;letter-spacing:2px;
+  text-transform:uppercase;color:#fff;margin-bottom:32px;}
+.badge-dot{width:8px;height:8px;background:#f64b7f;border-radius:50%;
+  box-shadow:0 0 8px #f64b7f;animation:blink 1.4s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.15;}}
+
+/* ─── Hero ───────────────────────────────────────────────────────────── */
+.hero{text-align:center;margin-bottom:16px;}
+.hero-white{font-size:clamp(50px,8vw,112px);font-weight:300;
+  letter-spacing:6px;text-transform:uppercase;line-height:1.12;color:#fff;}
+.hero-pink{font-size:clamp(50px,8vw,112px);font-weight:300;
+  letter-spacing:6px;text-transform:uppercase;line-height:1.12;color:#f64b7f;
+  text-shadow:0 0 60px rgba(246,75,127,0.3);}
+
+/* ─── Subtitle ───────────────────────────────────────────────────────── */
+.subtitle{text-align:center;font-size:clamp(13px,1.4vw,21px);font-weight:300;
+  letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.8);
+  line-height:1.9;max-width:640px;margin-bottom:40px;padding:0 16px;}
+.subtitle strong{color:#f64b7f;font-weight:700;}
+
+/* ─── Button ─────────────────────────────────────────────────────────── */
+.btn-pink{background:#f64b7f;border:none;border-radius:9999px;
+  padding:22px 80px;cursor:none;transition:background 0.2s;}
+.btn-pink:hover{background:#e0336b;}
+.btn-pink span{color:#fff;font-family:'Noto Sans',sans-serif;font-size:clamp(18px,1.8vw,28px);
+  font-weight:700;letter-spacing:3px;text-transform:uppercase;}
+
+/* ─── Play Screen ────────────────────────────────────────────────────── */
+#screen-play{justify-content:flex-start;}
+#game-area{position:fixed;inset:0;z-index:1;}
+
+/* ─── Target Cards ───────────────────────────────────────────────────── */
+.target-card{position:absolute;width:168px;pointer-events:none;z-index:10;}
+.target-inner{background:rgba(255,255,255,0.08);border-radius:24px;
+  padding:20px 24px;display:flex;flex-direction:column;align-items:center;
+  gap:12px;position:relative;overflow:hidden;}
+.target-glow{position:absolute;inset:0;border-radius:24px;
+  border:1px solid rgba(246,75,127,0.5);
+  box-shadow:0 0 15px 0 #f64b7f,0 4px 4px 0 rgba(0,0,0,0.25);pointer-events:none;}
+.target-label{color:#fff;font-size:15px;font-weight:500;text-align:center;line-height:1.4;}
+.target-icon{display:flex;align-items:center;justify-content:center;}
+
+.target-card.hit{animation:tHit 0.35s ease-out forwards;}
+@keyframes tHit{
+  0%{transform:scale(1);opacity:1;}
+  40%{transform:scale(1.3);opacity:1;filter:brightness(2.5);}
+  100%{transform:scale(1.45);opacity:0;}}
+
+.target-card.missed{animation:tMiss 0.6s ease-out forwards;}
+@keyframes tMiss{
+  0%{opacity:1;}
+  100%{opacity:0;transform:translateY(28px);}}
+
+/* ─── HUD ────────────────────────────────────────────────────────────── */
+#hud-top-left{position:fixed;top:40px;left:48px;z-index:30;display:flex;flex-direction:column;gap:8px;}
+#hud-top-right{position:fixed;top:40px;right:48px;z-index:30;display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+
+/* Hearts */
+#hearts-row{display:flex;gap:10px;padding:6px 0;}
+.heart-wrap{width:40px;height:40px;display:flex;align-items:center;justify-content:center;}
+.heart-wrap.shake{animation:hShake 0.45s ease;}
+@keyframes hShake{
+  0%{transform:scale(1);}
+  25%{transform:scale(1.4) rotate(-15deg);}
+  50%{transform:scale(0.8) rotate(10deg);}
+  75%{transform:scale(1.1);}
+  100%{transform:scale(1);}}
+.heart-svg{transform:scaleY(-1);transition:fill 0.2s;}
+
+/* Timer box */
+#timer-box{background:linear-gradient(to right,rgba(0,0,0,0.32),rgba(0,0,0,0.06));
+  border-left:4px solid #f64b7f;padding:8px 18px;}
+.hud-label{color:#f64b7f;font-size:14px;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;margin-bottom:2px;}
+#timer-val{color:#fff;font-size:clamp(34px,4vw,60px);font-weight:800;line-height:1;}
+#timer-val.danger{color:#ff4444;}
+
+/* Combo box */
+#combo-box{background:linear-gradient(to left,rgba(246,75,127,0.4),transparent);
+  padding:6px 16px;display:none;}
+#combo-box .hud-label{text-align:right;}
+#combo-val{color:#fff;font-size:clamp(18px,2vw,26px);font-weight:700;text-align:right;}
+
+/* Score box */
+#score-box{background:linear-gradient(to left,rgba(0,0,0,0.32),rgba(0,0,0,0.06));
+  border-right:4px solid #f64b7f;padding:8px 18px;}
+#score-box .hud-label{text-align:right;}
+#score-val{color:#fff;font-size:clamp(34px,4vw,60px);font-weight:800;text-align:right;line-height:1;}
+
+/* ─── HUD Bottom ─────────────────────────────────────────────────────── */
+#hud-bottom{position:fixed;bottom:0;left:0;right:0;z-index:20;display:flex;flex-direction:column;}
+#weekend-line{height:4px;
+  background:linear-gradient(to right,transparent,#f64b7f 30%,#f64b7f 70%,transparent);
+  opacity:0.85;box-shadow:0 0 20px 4px #ff0082;}
+#weekend-line.pulse{animation:linePulse 0.6s ease-out;}
+@keyframes linePulse{
+  0%{opacity:0.85;box-shadow:0 0 20px 4px #ff0082;height:4px;}
+  25%{opacity:1;box-shadow:0 0 90px 40px #ff0082,0 0 150px 70px rgba(246,75,127,0.5);height:6px;}
+  60%{opacity:1;box-shadow:0 0 60px 25px #ff0082,0 0 110px 45px rgba(246,75,127,0.35);height:5px;}
+  100%{opacity:0.85;box-shadow:0 0 20px 4px #ff0082;height:4px;}}
+
+#weekend-bar{backdrop-filter:blur(12px);background:rgba(27,27,32,0.85);
+  display:flex;align-items:center;justify-content:center;gap:16px;padding:10px 0;}
+.wk-arrow{width:14px;height:16px;}
+#weekend-label{color:#fff;font-size:16px;font-weight:400;
+  letter-spacing:5.6px;text-transform:uppercase;}
+
+/* ─── Score Popup ────────────────────────────────────────────────────── */
+.score-popup{position:fixed;pointer-events:none;z-index:50;
+  font-weight:800;color:#f64b7f;text-shadow:0 0 10px #f64b7f;white-space:nowrap;
+  animation:popUp 0.8s ease-out forwards;transform:translateX(-50%);}
+@keyframes popUp{
+  0%{opacity:1;transform:translateX(-50%) translateY(0);}
+  60%{opacity:1;}
+  100%{opacity:0;transform:translateX(-50%) translateY(-70px);}}
+
+/* ─── Shot Ripple ────────────────────────────────────────────────────── */
+.shot-ring{position:fixed;pointer-events:none;z-index:40;
+  border:2px solid #f64b7f;border-radius:50%;
+  animation:shotRipple 0.45s ease-out forwards;transform:translate(-50%,-50%);}
+@keyframes shotRipple{
+  0%{width:4px;height:4px;opacity:1;}
+  100%{width:64px;height:64px;opacity:0;}}
+
+/* ─── End Screen ─────────────────────────────────────────────────────── */
+#end-subtitle{text-align:center;font-size:clamp(13px,1.3vw,20px);font-weight:300;
+  letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.7);
+  margin-bottom:36px;}
+
+#end-stats{display:flex;align-items:flex-start;gap:4px;margin-bottom:44px;}
+.stat-block{display:flex;flex-direction:column;padding:8px 18px;}
+.stat-block.center{align-items:center;padding:8px 40px;
+  border-top:4px solid #f64b7f;border-bottom:4px solid #f64b7f;}
+.stat-block.right{align-items:flex-end;border-right:4px solid #f64b7f;}
+.stat-divider{width:4px;background:#f64b7f;align-self:stretch;}
+.stat-label{color:#f64b7f;font-size:15px;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;margin-bottom:4px;}
+.stat-value{color:#fff;font-size:clamp(40px,5vw,80px);font-weight:800;line-height:1.1;}
+.stat-label.right,.stat-value.right{text-align:right;}
+
+#end-hearts-row{display:flex;gap:8px;margin-top:4px;}
+.end-heart{width:52px;height:52px;display:flex;align-items:center;justify-content:center;}
+
+/* ─── Screen transition ──────────────────────────────────────────────── */
+.screen{transition:opacity 0.25s;}
+</style>
+</head>
+<body>
+
+<div id="bg-grid"></div>
+
+<!-- Custom Cursor -->
+<div id="cursor">
+  <div class="c-ring"></div>
+  <div class="c-h"></div>
+  <div class="c-v"></div>
+  <div class="c-dot"></div>
+  <div class="c-tl"></div>
+  <div class="c-tr"></div>
+  <div class="c-bl"></div>
+  <div class="c-br"></div>
+</div>
+
+<!-- ═══════════════════ START SCREEN ═══════════════════ -->
+<div id="screen-start" class="screen active">
+  <div class="badge">Mission</div>
+  <div class="hero">
+    <div class="hero-white">Defend Your</div>
+    <div class="hero-pink">Weekend</div>
+  </div>
+  <p class="subtitle">
+    Privacy threats are descending toward your weekend.<br>
+    <strong>Click to shoot</strong> them before they cross the line.
+  </p>
+  <button class="btn-pink" id="btn-start"><span>Start</span></button>
+</div>
+
+<!-- ═══════════════════ PLAY SCREEN ════════════════════ -->
+<div id="screen-play" class="screen">
+  <!-- Game area (targets injected here) -->
+  <div id="game-area"></div>
+
+  <!-- HUD Top Left -->
+  <div id="hud-top-left">
+    <div id="hearts-row"></div>
+    <div id="timer-box">
+      <div class="hud-label">Time Remaining</div>
+      <div id="timer-val">01:00</div>
+    </div>
+  </div>
+
+  <!-- HUD Top Right -->
+  <div id="hud-top-right">
+    <div id="combo-box">
+      <div class="hud-label">Combo Streak</div>
+      <div id="combo-val">x1</div>
+    </div>
+    <div id="score-box">
+      <div class="hud-label right">Score</div>
+      <div id="score-val">0</div>
+    </div>
+  </div>
+
+  <!-- HUD Bottom -->
+  <div id="hud-bottom">
+    <div id="weekend-line"></div>
+    <div id="weekend-bar">
+      <svg class="wk-arrow" viewBox="0 0 14.01 15.9886" fill="none" style="transform:scaleY(-1)">
+        <path d="M0.898248 2.99786L7.005 13.5459L13.1118 2.99786H0.898248ZM2.81355 4.10818H11.1965L7.005 11.3252L2.81355 4.10818ZM7.005 4.66334C7.12297 4.66334 7.29415 4.71654 7.40055 4.82295C7.50696 4.92935 7.56016 5.0612 7.56016 5.2185C7.56016 5.37579 7.50696 5.50764 7.40055 5.61405C7.29415 5.72045 7.16229 5.77366 7.005 5.77366C6.8477 5.77366 6.71585 5.72045 6.60945 5.61405C6.50304 5.50764 6.44984 5.37579 6.44984 5.2185C6.44984 5.0612 6.50304 4.92935 6.60945 4.82295C6.71585 4.71654 6.8477 4.66334 7.005 4.66334ZM6.44984 6.32882H7.56016V9.10461H6.44984V6.32882Z" fill="#F64B7F"/>
+      </svg>
+      <span id="weekend-label">Your Weekend</span>
+      <svg class="wk-arrow" viewBox="0 0 14.01 15.9886" fill="none" style="transform:scaleY(-1)">
+        <path d="M0.898248 2.99786L7.005 13.5459L13.1118 2.99786H0.898248ZM2.81355 4.10818H11.1965L7.005 11.3252L2.81355 4.10818ZM7.005 4.66334C7.12297 4.66334 7.29415 4.71654 7.40055 4.82295C7.50696 4.92935 7.56016 5.0612 7.56016 5.2185C7.56016 5.37579 7.50696 5.50764 7.40055 5.61405C7.29415 5.72045 7.16229 5.77366 7.005 5.77366C6.8477 5.77366 6.71585 5.72045 6.60945 5.61405C6.50304 5.50764 6.44984 5.37579 6.44984 5.2185C6.44984 5.0612 6.50304 4.92935 6.60945 4.82295C6.71585 4.71654 6.8477 4.66334 7.005 4.66334ZM6.44984 6.32882H7.56016V9.10461H6.44984V6.32882Z" fill="#F64B7F"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ END SCREEN ═════════════════════ -->
+<div id="screen-end" class="screen">
+  <div class="badge" id="end-badge"><span id="end-badge-text">Mission Completed</span></div>
+  <div class="hero">
+    <div class="hero-white">Weekend</div>
+    <div class="hero-pink" id="end-result">Secure</div>
+  </div>
+  <p id="end-subtitle"></p>
+  <div id="end-stats"></div>
+  <button class="btn-pink" id="btn-restart"><span id="btn-restart-text">Play Again</span></button>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  SVG PATHS
+// ════════════════════════════════════════════════════════
+const P = {
+  heart: "M20 8.74271L17.6524 10.8474C14.927 13.303 12.6739 15.4212 10.893 17.2021C9.11203 18.983 7.69539 20.5818 6.64302 21.9984C5.59066 23.4151 4.85535 24.7171 4.43711 25.9043C4.01886 27.0916 3.80973 28.3059 3.80973 29.5471C3.80973 32.0836 4.65972 34.2018 6.35969 35.9018C8.05967 37.6018 10.1779 38.4518 12.7144 38.4518C14.1175 38.4518 15.4532 38.1549 16.7214 37.5613C17.9897 36.9677 19.0825 36.1312 20 35.0518C20.9174 36.1312 22.0102 36.9677 23.2785 37.5613C24.5467 38.1549 25.8824 38.4518 27.2855 38.4518C29.822 38.4518 31.9402 37.6018 33.6402 35.9018C35.3402 34.2018 36.1902 32.0836 36.1902 29.5471C36.1902 28.3059 35.981 27.0916 35.5628 25.9043C35.1445 24.7171 34.4092 23.4151 33.3569 21.9984C32.3045 20.5818 30.8879 18.983 29.1069 17.2021C27.326 15.4212 25.0729 13.303 22.3475 10.8474L20 8.74271Z",
+  pii: "M72 5.2378V42.4466C72 45.3346 69.6502 47.6844 66.7626 47.6844H5.23809C2.34982 47.6844 0 45.3346 0 42.4466V5.2378C0 2.34982 2.34982 0 5.23809 0H25.1814C25.6965 0 26.114 0.417486 26.114 0.932611C26.114 1.44774 25.6965 1.86522 25.1814 1.86522H5.23809C3.37863 1.86522 1.86522 3.3782 1.86522 5.23766V42.4465C1.86522 44.3059 3.37863 45.8189 5.23809 45.8189H66.7628C68.6222 45.8189 70.1349 44.3059 70.1349 42.4465V5.2378C70.1349 3.37834 68.6222 1.86537 66.7628 1.86537H46.5876C46.0725 1.86537 45.655 1.44788 45.655 0.932756C45.655 0.417631 46.0725 0.00014503 46.5876 0.00014503H66.7626C69.6502 1.0196e-06 72 2.34982 72 5.2378ZM27.1035 11.0336C28.5031 11.0336 29.6419 12.1722 29.6419 13.5718V36.3481C29.6419 37.6746 28.5763 38.8858 27.1035 38.8858H8.742C7.28894 38.8858 6.20425 37.6973 6.20425 36.3481V13.5718C6.20425 12.1722 7.34237 11.0336 8.742 11.0336H27.1035ZM27.2386 36.9896C25.6377 33.3158 21.9817 30.8924 17.9315 30.8924C13.8718 30.8924 10.2093 33.3158 8.60764 36.9892C8.83028 37.0359 27.0493 37.0292 27.2386 36.9896ZM27.1035 12.8989H8.742C8.37118 12.8989 8.06948 13.2009 8.06948 13.5718V34.1711C10.2841 31.0103 13.9427 29.027 17.9315 29.027C21.9116 29.027 25.5641 31.0098 27.7767 34.1698V13.5718C27.7767 13.201 27.4743 12.8989 27.1035 12.8989ZM23.4086 21.4814C23.4086 24.5038 20.9459 26.9626 17.9191 26.9626C14.8967 26.9626 12.4376 24.5039 12.4376 21.4814C12.4376 18.4544 14.8967 15.9919 17.9191 15.9919C20.9459 15.9919 23.4086 18.4544 23.4086 21.4814ZM21.5432 21.4814C21.5432 19.4832 19.9176 17.8573 17.9191 17.8573C15.9248 17.8573 14.3028 19.4832 14.3028 21.4814C14.3028 23.4753 15.9248 25.0973 17.9191 25.0973C19.9178 25.0973 21.5432 23.4753 21.5432 21.4814ZM37.0369 39.421H51.4856C52.0007 39.421 52.4182 39.0035 52.4182 38.4884C52.4182 37.9732 52.0007 37.5557 51.4856 37.5557H37.0369C36.5217 37.5557 36.1043 37.9732 36.1043 38.4884C36.1043 39.0035 36.5217 39.421 37.0369 39.421ZM64.9302 37.5557H55.6992C55.1841 37.5557 54.7666 37.9732 54.7666 38.4884C54.7666 39.0035 55.1841 39.421 55.6992 39.421H64.9301C65.4452 39.421 65.8627 39.0035 65.8627 38.4884C65.8629 37.9732 65.4454 37.5557 64.9302 37.5557ZM37.0369 26.1599H51.4856C52.0007 26.1599 52.4182 25.7424 52.4182 25.2273C52.4182 24.7122 52.0007 24.2947 51.4856 24.2947H37.0369C36.5217 24.2947 36.1043 24.7122 36.1043 25.2273C36.1043 25.7424 36.5217 26.1599 37.0369 26.1599ZM64.9302 24.2947H55.6992C55.1841 24.2947 54.7666 24.7122 54.7666 25.2273C54.7666 25.7424 55.1841 26.1599 55.6992 26.1599H64.9301C65.4452 26.1599 65.8627 25.7424 65.8627 25.2273C65.8629 24.7122 65.4454 24.2947 64.9302 24.2947ZM64.9302 30.9252H50.4823C49.9671 30.9252 49.5496 31.3427 49.5496 31.8578C49.5496 32.373 49.9671 32.7904 50.4823 32.7904H64.9302C65.4454 32.7904 65.8629 32.373 65.8629 31.8578C65.8629 31.3427 65.4454 30.9252 64.9302 30.9252ZM37.0369 32.7904H46.2679C46.7831 32.7904 47.2005 32.373 47.2005 31.8578C47.2005 31.3427 46.7831 30.9252 46.2679 30.9252H37.0369C36.5217 30.9252 36.1043 31.3427 36.1043 31.8578C36.1043 32.373 36.5217 32.7904 37.0369 32.7904ZM64.9302 17.6642H50.4823C49.9671 17.6642 49.5496 18.0817 49.5496 18.5968C49.5496 19.1119 49.9671 19.5294 50.4823 19.5294H64.9302C65.4454 19.5294 65.8629 19.1119 65.8629 18.5968C65.8629 18.0817 65.4454 17.6642 64.9302 17.6642ZM37.0369 19.5294H46.2679C46.7831 19.5294 47.2005 19.1119 47.2005 18.5968C47.2005 18.0817 46.7831 17.6642 46.2679 17.6642H37.0369C36.5217 17.6642 36.1043 18.0817 36.1043 18.5968C36.1043 19.1119 36.5217 19.5294 37.0369 19.5294ZM66.4647 11.9663C66.4647 11.4511 66.0472 11.0336 65.5321 11.0336H37.0369C36.5217 11.0336 36.1043 11.4511 36.1043 11.9663C36.1043 12.4814 36.5217 12.8989 37.0369 12.8989H65.5321C66.0472 12.8989 66.4647 12.4814 66.4647 11.9663Z",
+  spreadsheet: "M3.5434 56.0557H23.2718C23.6372 56.0557 23.9337 55.7595 23.9337 55.3938C23.9337 55.0282 23.6372 54.732 23.2718 54.732H3.5434C2.31961 54.732 1.32375 53.7363 1.32375 52.5123V11.6877C1.32375 10.4639 2.31961 9.46828 3.5434 9.46828H7.86797V12.4342C7.86797 13.7227 8.91633 14.771 10.2048 14.771H28.6612C29.9497 14.771 30.9981 13.7227 30.9981 12.4342V9.4684H35.3223C36.5461 9.4684 37.542 10.464 37.542 11.6878V26.5624C37.542 26.928 37.8384 27.2243 38.2038 27.2243C38.5692 27.2243 38.8657 26.928 38.8657 26.5624V11.6878C38.8657 9.73406 37.2761 8.14465 35.3223 8.14465H30.9981V5.65547C30.9981 4.36699 29.9497 3.31887 28.6612 3.31887H25.9318V2.3427C25.9318 1.05105 24.8809 0 23.589 0H15.2771C13.9853 0 12.9343 1.05094 12.9343 2.3427V3.31887H10.2049C8.91645 3.31887 7.86809 4.36711 7.86809 5.65547V8.14465H3.5434C1.58965 8.14465 0 9.73406 0 11.6878V52.5124C0.000117188 54.4662 1.58965 56.0557 3.5434 56.0557ZM9.19184 5.65547C9.19184 5.09695 9.64641 4.64262 10.2049 4.64262H13.5962C13.9616 4.64262 14.2581 4.34637 14.2581 3.98074V2.34258C14.2581 1.78066 14.7152 1.32363 15.2771 1.32363H23.589C24.1509 1.32363 24.6081 1.78066 24.6081 2.34258V3.98063C24.6081 4.34625 24.9046 4.6425 25.27 4.6425H28.6612C29.2198 4.6425 29.6743 5.09695 29.6743 5.65535V12.4342C29.6743 12.9928 29.2198 13.4473 28.6612 13.4473H10.2049C9.64641 13.4473 9.19184 12.9928 9.19184 12.4342V5.65547ZM43.5663 28.7719C43.0704 27.9422 42.1978 27.4472 41.2316 27.4472C40.2574 27.4493 39.3847 27.9479 38.8914 28.7809L25.1631 51.9472C24.658 52.7987 24.6495 53.8206 25.1394 54.681C25.6294 55.5411 26.5132 56.0548 27.503 56.0548H55.0825C56.0748 56.0548 56.9591 55.5396 57.4486 54.6765C57.9381 53.8137 57.9265 52.79 57.4172 51.9386L43.5663 28.7719ZM56.2972 54.0233C56.046 54.4663 55.5919 54.7309 55.0825 54.7309H27.5029C26.9948 54.7309 26.5411 54.4672 26.2894 54.0255C26.0378 53.5841 26.0425 53.0595 26.3014 52.6223L40.0298 29.4558C40.2837 29.028 40.7313 28.7721 41.2287 28.7711C41.7277 28.7711 42.1754 29.0251 42.4305 29.451L56.2813 52.6175C56.5424 53.0549 56.5484 53.5804 56.2972 54.0233ZM41.0511 34.2786C39.5346 34.2786 38.3337 35.5683 38.4411 37.0815L38.9303 43.9457C39.0091 45.0531 39.9408 45.9207 41.0512 45.9207C42.1622 45.9207 43.0937 45.0531 43.1722 43.9457L43.6617 37.0815C43.7691 35.568 42.5684 34.2786 41.0511 34.2786ZM41.8518 43.8517C41.822 44.2697 41.4704 44.597 41.0511 44.597C40.6318 44.597 40.2803 44.2695 40.2505 43.8516L39.7614 36.9875C39.6315 35.1688 42.4699 35.1859 42.3412 36.9873L41.8518 43.8517ZM41.0511 47.2301C39.6662 47.2301 38.5393 48.357 38.5393 49.7421C38.5393 51.1273 39.6662 52.2541 41.0511 52.2541C42.4365 52.2541 43.5634 51.1273 43.5634 49.7421C43.5634 48.357 42.4365 47.2301 41.0511 47.2301ZM41.0511 50.9303C40.3962 50.9303 39.8631 50.3972 39.8631 49.742C39.8631 49.0868 40.3962 48.5537 41.0511 48.5537C41.7066 48.5537 42.2395 49.0868 42.2395 49.742C42.2396 50.3973 41.7066 50.9303 41.0511 50.9303Z",
+  cookie: "M14.3684 65.5962L25.5685 50.4344C25.9823 50.5637 26.4073 50.6478 26.8376 50.6475C27.7951 50.6475 28.7552 50.3248 29.5493 49.6712C29.929 49.359 29.9838 48.7979 29.6709 48.419C29.3594 48.0393 28.7983 47.9851 28.4187 48.2974C27.4421 49.0995 25.9742 49.0286 25.0742 48.1367L20.5622 43.6253C19.6677 42.721 19.5983 41.2502 20.4065 40.274C20.7201 39.8958 20.6672 39.3346 20.2883 39.0211C19.9086 38.7068 19.3482 38.7604 19.0354 39.1393C18.0809 40.2918 17.8422 41.7915 18.2617 43.1311L3.08335 54.3451C-0.708376 57.3083 -1.06197 62.9353 2.35046 66.3478C5.73815 69.7356 11.3607 69.4431 14.3684 65.5962ZM4.16036 55.7622L19.1258 44.7059L19.3018 44.8819C19.3031 44.8832 19.3039 44.8847 19.3053 44.886L23.8138 49.3946C23.8162 49.3968 23.8189 49.3983 23.8211 49.4006L23.9925 49.572L12.9507 64.5193C10.644 67.4711 6.26655 67.7442 3.609 65.0895C0.923972 62.4043 1.26603 58.0241 4.16036 55.7622ZM25.6897 7.36979C15.8441 17.2154 15.8413 33.1617 25.6897 43.0085C35.5343 52.8546 51.4807 52.8562 61.3284 43.0085C71.154 33.183 71.1533 17.1954 61.3277 7.36979C51.5029 -2.4566 35.5146 -2.4566 25.6897 7.36979ZM60.0699 41.75C50.9181 50.9002 36.1001 50.9019 26.9481 41.75C17.7973 32.5992 17.7969 17.7809 26.9481 8.6282C36.0787 -0.502396 50.9379 -0.503083 60.0692 8.6282C69.2009 17.7599 69.2016 32.6183 60.0699 41.75ZM46.1732 12.3858C45.6087 11.4375 44.6122 10.8714 43.5088 10.8714C42.4046 10.8714 41.4089 11.4382 40.845 12.3858L29.1851 31.9731C27.9561 34.0376 29.4414 36.6589 31.8495 36.6589H55.1679C57.573 36.6589 59.0632 34.0408 57.8323 31.9731L46.1732 12.3858ZM55.1693 34.8788H31.8495C30.8261 34.8788 30.1897 33.7648 30.7148 32.8839L42.3747 13.296C42.6188 12.8865 43.0318 12.6515 43.5088 12.6515C43.9858 12.6515 44.3994 12.8865 44.6435 13.2967L56.3027 32.8839C56.8281 33.7657 56.1899 34.8788 55.1693 34.8788ZM43.5088 27.9096C44.6707 27.9096 45.6212 27.0009 45.6734 25.8411L45.9272 20.2716C46.0759 16.9595 40.9428 16.9602 41.0912 20.2716L41.3443 25.8404C41.3963 27.0008 42.3468 27.9096 43.5088 27.9096ZM43.5088 19.522C43.8735 19.522 44.1658 19.8258 44.1485 20.1908L43.8947 25.7611C43.8856 25.9677 43.716 26.1297 43.5088 26.1297C43.3015 26.1297 43.132 25.9677 43.1229 25.7604L42.8697 20.191C42.8524 19.825 43.1435 19.522 43.5088 19.522ZM43.5088 28.5528C42.1348 28.5528 41.0174 29.6702 41.0174 31.0442C41.0174 32.4182 42.1348 33.5356 43.5088 33.5356C44.8828 33.5356 46.0002 32.4182 46.0002 31.0442C46 29.6702 44.8826 28.5528 43.5088 28.5528ZM43.5088 31.7554C43.1166 31.7554 42.7975 31.4363 42.7975 31.0441C42.7975 30.6519 43.1166 30.3327 43.5088 30.3327C43.901 30.3327 44.2201 30.6519 44.2201 31.0441C44.2201 31.4363 43.9009 31.7554 43.5088 31.7554Z",
+  password: "M72.1154 18.4536V55.9088C72.1154 58.9455 69.6447 61.4166 66.6076 61.4166H5.50778C2.47068 61.4166 0 58.9455 0 55.9088V18.4536C0 17.9376 0.41815 17.5195 0.934095 17.5195C1.45004 17.5195 1.86819 17.9376 1.86819 18.4536V55.9088C1.86819 57.9157 3.50069 59.5482 5.50764 59.5482H66.6076C68.6146 59.5482 70.2471 57.9157 70.2471 55.9088V18.4536C70.2471 17.9376 70.6652 17.5195 71.1812 17.5195C71.6972 17.5195 72.1154 17.9376 72.1154 18.4536ZM72.1154 5.51067V14.7142C72.1154 15.2301 71.6972 15.6482 71.1813 15.6482H0.934095C0.41815 15.6482 0 15.2301 0 14.7142V5.51067C0 2.47183 2.47212 0 5.5111 0H66.6044C69.6433 0 72.1154 2.47183 72.1154 5.51067ZM70.2472 5.51067C70.2472 3.50228 68.6133 1.86819 66.6044 1.86819H5.51096C3.50213 1.86819 1.86819 3.50213 1.86819 5.51067V13.7799H70.2471L70.2472 5.51067ZM28.313 7.82412C28.313 9.78434 26.7185 11.3789 24.7583 11.3789H8.04957C6.08936 11.3789 4.49479 9.78434 4.49479 7.82412C4.49479 5.86391 6.08936 4.2692 8.04957 4.2692H24.7583C26.7185 4.2692 28.313 5.86391 28.313 7.82412ZM26.4449 7.82412C26.4449 6.89436 25.6885 6.13753 24.7583 6.13753H8.04957C7.11951 6.13753 6.36298 6.89436 6.36298 7.82412C6.36298 8.75389 7.11937 9.51072 8.04957 9.51072H24.7583C25.6883 9.51057 26.4449 8.75389 26.4449 7.82412ZM24.816 31.2826C24.5171 30.8616 23.9344 30.7608 23.5136 31.0608L21.3891 32.5664V30.4595C21.3891 29.9435 20.971 29.5254 20.455 29.5254C19.9391 29.5254 19.5209 29.9435 19.5209 30.4595V32.5664L17.3964 31.0608C16.3925 30.3438 15.3054 31.8697 16.3164 32.5846L18.8398 34.373L16.3164 36.1614C15.8953 36.4591 15.7959 37.0423 16.0941 37.4633C16.3935 37.8856 16.9787 37.9829 17.3964 37.6852L19.5209 36.1796V38.2858C19.5209 38.8017 19.9391 39.2199 20.455 39.2199C20.971 39.2199 21.3891 38.8017 21.3891 38.2858V36.1796L23.5136 37.6852C23.9316 37.983 24.5167 37.8855 24.816 37.4633C25.1141 37.0423 25.0149 36.4591 24.5937 36.1614L22.0702 34.373L24.5937 32.5846C25.0147 32.2868 25.1141 31.7037 24.816 31.2826ZM40.4186 31.2826C40.1198 30.8616 39.537 30.7608 39.1163 31.0608L36.9918 32.5664V30.4595C36.9918 29.9435 36.5736 29.5254 36.0577 29.5254C35.5418 29.5254 35.1236 29.9435 35.1236 30.4595V32.5664L32.9991 31.0608C32.5791 30.7609 31.9949 30.8616 31.6968 31.2826C31.3986 31.7037 31.4979 32.2868 31.919 32.5846L34.4425 34.373L31.919 36.1614C31.498 36.4591 31.3988 37.0423 31.6968 37.4633C31.9962 37.8856 32.5814 37.9829 32.9991 37.6852L35.1236 36.1796V38.2858C35.1236 38.8017 35.5418 39.2199 36.0577 39.2199C36.5736 39.2199 36.9918 38.8017 36.9918 38.2858V36.1796L39.1163 37.6852C39.5343 37.983 40.1193 37.8855 40.4186 37.4633C40.7168 37.0423 40.6175 36.4591 40.1964 36.1614L37.6729 34.373L40.1964 32.5846C40.6174 32.2868 40.7168 31.7037 40.4186 31.2826ZM56.0213 31.2826C55.7224 30.8616 55.1397 30.7608 54.719 31.0608L52.5945 32.5664V30.4595C52.5945 29.9435 52.1763 29.5254 51.6604 29.5254C51.1444 29.5254 50.7263 29.9435 50.7263 30.4595V32.5664L48.6018 31.0608C48.1817 30.7609 47.5976 30.8616 47.2994 31.2826C47.0013 31.7037 47.1005 32.2868 47.5217 32.5846L50.0452 34.373L47.5217 36.1614C47.1007 36.4591 47.0013 37.0423 47.2994 37.4633C47.5989 37.8856 48.184 37.9829 48.6018 37.6852L50.7263 36.1796V38.2858C50.7263 38.8017 51.1444 39.2199 51.6604 39.2199C52.1763 39.2199 52.5945 38.8017 52.5945 38.2858V36.1796L54.719 37.6852C55.137 37.983 55.722 37.8855 56.0213 37.4633C56.3194 37.0423 56.2202 36.4591 55.799 36.1614L53.2756 34.373L55.799 32.5846C56.2201 32.2868 56.3194 31.7037 56.0213 31.2826Z",
+  error404: "M66.3485 46.0817V47.989C66.3485 50.5651 64.2522 52.6614 61.6761 52.6614H10.3342C7.75809 52.6614 5.66185 50.5651 5.66185 47.989V46.0817C5.66185 45.6265 6.0312 45.2571 6.48639 45.2571C6.94158 45.2571 7.31093 45.6265 7.31093 46.0817V47.989C7.31093 49.6558 8.66745 51.0123 10.3342 51.0123H61.676C63.3427 51.0123 64.6992 49.6558 64.6992 47.989V46.0817C64.6992 45.6265 65.0686 45.2571 65.5238 45.2571C65.9791 45.257 66.3485 45.6263 66.3485 46.0817ZM64.6994 16.7276V13.5299H7.31093V16.7276C7.31093 17.1828 6.94158 17.5521 6.48639 17.5521C6.0312 17.5521 5.66185 17.1828 5.66185 16.7276V4.67293C5.66185 2.0958 7.75926 0 10.337 0H61.6733C64.2506 0 66.3485 2.09522 66.3485 4.67293V16.7276C66.3485 17.1828 65.9791 17.5521 65.5239 17.5521C65.0687 17.5521 64.6994 17.1829 64.6994 16.7276ZM64.6978 4.67293C64.6978 3.00385 63.3392 1.64966 61.6761 1.64966H10.3342C8.67037 1.64966 7.31254 3.00458 7.31254 4.67293V11.8806H64.6978V4.67293ZM16.2579 6.76494C16.2579 8.42423 14.9084 9.77375 13.2491 9.77375C11.5898 9.77375 10.2403 8.42423 10.2403 6.76494C10.2403 5.10564 11.5898 3.75612 13.2491 3.75612C14.9084 3.75612 16.2579 5.10564 16.2579 6.76494ZM14.6089 6.76494C14.6089 6.015 13.9991 5.4052 13.2491 5.4052C12.4992 5.4052 11.8894 6.015 11.8894 6.76494C11.8894 7.51488 12.4992 8.12467 13.2491 8.12467C13.9991 8.12467 14.6089 7.51488 14.6089 6.76494ZM72.0102 23.6509V39.1578C72.0102 41.6109 70.0144 43.6069 67.561 43.6069H4.44913C1.99595 43.6069 0 41.6111 0 39.1578V23.6509C0 21.1977 1.9958 19.2018 4.44913 19.2018H67.561C70.0144 19.2018 72.0102 21.1977 72.0102 23.6509ZM70.3611 23.6509C70.3611 22.1071 69.105 20.8509 67.561 20.8509H4.44913C2.90531 20.8509 1.64908 22.107 1.64908 23.6509V39.1578C1.64908 40.7016 2.90516 41.9578 4.44913 41.9578H67.561C69.1049 41.9578 70.3611 40.7017 70.3611 39.1578V23.6509ZM29.9488 33.4618C29.9488 33.9169 29.5795 34.2863 29.1243 34.2863H28.1554V37.8931C28.1554 38.3483 27.786 38.7176 27.3308 38.7176C26.8757 38.7176 26.5063 38.3483 26.5063 37.8931V34.2863H20.9046C20.4655 34.2863 20.0677 34.026 19.8922 33.6234C19.7167 33.2207 19.7961 32.7521 20.0951 32.4301L26.2426 25.8245C26.5551 25.4895 27.0307 25.3816 27.4558 25.5496C27.8809 25.7171 28.1552 26.1203 28.1552 26.5771V32.6372H29.1242C29.5795 32.6372 29.9488 33.0064 29.9488 33.4618ZM26.5063 27.9615L22.1548 32.6372H26.5063V27.9615ZM52.211 33.4618C52.211 33.9169 51.8416 34.2863 51.3864 34.2863H50.4169V37.8931C50.4169 38.3483 50.0476 38.7176 49.5924 38.7176C49.1372 38.7176 48.7679 38.3483 48.7679 37.8931V34.2863H43.1662C42.7264 34.2863 42.3292 34.026 42.1537 33.6228C41.9783 33.2196 42.0587 32.7509 42.3583 32.4289L48.5042 25.8245C48.8166 25.4895 49.2923 25.3816 49.7174 25.5496C50.1425 25.7171 50.4168 26.1203 50.4168 26.5771V32.6372H51.3863C51.8416 32.6372 52.211 33.0064 52.211 33.4618ZM48.7679 27.9615L44.417 32.6372H48.7679V27.9615ZM40.2536 28.3395V34.4694C40.2536 36.812 38.3478 38.7178 36.0052 38.7178C33.6625 38.7178 31.7568 36.812 31.7568 34.4694V28.3395C31.7568 25.9968 33.6625 24.0911 36.0052 24.0911C38.3478 24.0911 40.2536 25.9968 40.2536 28.3395ZM38.6045 28.3395C38.6045 26.9062 37.4385 25.7402 36.0052 25.7402C34.5718 25.7402 33.4058 26.9062 33.4058 28.3395V34.4694C33.4058 35.9027 34.5718 37.0687 36.0052 37.0687C37.4385 37.0687 38.6045 35.9027 38.6045 34.4694V28.3395Z",
+  database: "M5.86209 4.05805C4.36292 4.05805 3.14297 5.278 3.14297 6.77748C3.14297 8.27634 4.36292 9.49629 5.86209 9.49629C7.36157 9.49629 8.58152 8.27634 8.58152 6.77748C8.58152 5.278 7.36157 4.05805 5.86209 4.05805ZM5.86209 7.75081C5.32513 7.75081 4.88845 7.31444 4.88845 6.77748C4.88845 6.24051 5.32513 5.80353 5.86209 5.80353C6.39905 5.80353 6.83604 6.24051 6.83604 6.77748C6.83604 7.31444 6.39905 7.75081 5.86209 7.75081ZM12.481 4.05805C10.9819 4.05805 9.76191 5.278 9.76191 6.77748C9.76191 8.27634 10.9819 9.49629 12.481 9.49629C13.9805 9.49629 15.2005 8.27634 15.2005 6.77748C15.2003 5.278 13.9805 4.05805 12.481 4.05805ZM12.481 7.75081C11.9441 7.75081 11.5074 7.31444 11.5074 6.77748C11.5074 6.24051 11.9441 5.80353 12.481 5.80353C13.018 5.80353 13.455 6.24051 13.455 6.77748C13.455 7.31444 13.018 7.75081 12.481 7.75081ZM67.8187 0.000154437H42.084C40.6459 0.000154437 39.4757 1.17004 39.4757 2.60817V10.9463C39.4757 12.3845 40.6459 13.555 42.084 13.555H50.6725V17.5232H42.084C40.6459 17.5232 39.4757 18.6937 39.4757 20.1319V28.47C39.4757 29.9081 40.6459 31.078 42.084 31.078H50.6725V35.0469H42.084C40.6459 35.0469 39.4757 36.2168 39.4757 37.6549V45.9931C39.4757 47.4312 40.6459 48.6011 42.084 48.6011H54.0763V60.5161C54.0763 62.3321 52.6015 63.8093 50.789 63.8093H49.0784C48.5963 63.8093 48.2057 64.2002 48.2057 64.682C48.2057 65.1638 48.5963 65.5548 49.0784 65.5548H50.789C53.564 65.5548 55.8217 63.2944 55.8217 60.516V48.6009H67.8185C69.2566 48.6009 70.4268 47.4311 70.4268 45.9929V37.6548C70.4268 36.2166 69.2566 35.0468 67.8185 35.0468H59.2314V31.0779H67.8185C69.2566 31.0779 70.4268 29.908 70.4268 28.4699V20.1317C70.4268 18.6936 69.2566 17.5231 67.8185 17.5231H59.2314V13.5548H67.8185C69.2566 13.5548 70.4268 12.3843 70.4268 10.9462V2.60802C70.4268 1.17004 69.2566 0.000154437 67.8187 0.000154437Z"
+};
+
+// ════════════════════════════════════════════════════════
+//  TARGET TYPES
+// ════════════════════════════════════════════════════════
+const TARGET_TYPES = [
+  { key:'pii',         label1:'Unmasked',  label2:'PII',         path:P.pii,         vb:'0 0 72 47.6845',      iw:64, ih:42 },
+  { key:'spreadsheet', label1:'Leaky',     label2:'Spreadsheet', path:P.spreadsheet, vb:'0 0 57.8076 56.0557',  iw:56, ih:54 },
+  { key:'cookie',      label1:'Tracking',  label2:'Cookie',      path:P.cookie,      vb:'0 0 68.6973 68.6991',  iw:62, ih:62 },
+  { key:'password',    label1:'Weak',      label2:'Password',    path:P.password,    vb:'0 0 72.1154 61.4166',  iw:64, ih:54 },
+  { key:'error404',    label1:'404',       label2:'Error',       path:P.error404,    vb:'0 0 72.0102 52.6614',  iw:64, ih:46 },
+  { key:'database',    label1:'Database',  label2:'Timeout',     path:P.database,    vb:'0 0 70.4268 76.2195',  iw:60, ih:65 },
+];
+
+// ════════════════════════════════════════════════════════
+//  CONSTANTS
+// ══════════════════════════════════════════════���═════════
+const TARGET_W    = 168;
+const TARGET_H    = 180;
+const HUD_BOT_H   = 68;
+const TOTAL_TIME  = 60;
+
+// ════════════════════════════════════════════════════════
+//  GAME STATE
+// ════════════════════════════════════════════════════════
+let state = {
+  targets: [], score: 0, combo: 1,
+  hearts: 3, timeLeft: TOTAL_TIME,
+  running: false, rafId: null,
+  spawnTimer: 1.0,
+};
+let lastTimestamp = 0;
+
+// ════════════════════════════════════════════════════════
+//  DOM REFS
+// ════════════════════════════════════════════════════════
+const cursor      = document.getElementById('cursor');
+const gameArea    = document.getElementById('game-area');
+const heartsRow   = document.getElementById('hearts-row');
+const timerVal    = document.getElementById('timer-val');
+const comboBox    = document.getElementById('combo-box');
+const comboVal    = document.getElementById('combo-val');
+const scoreVal    = document.getElementById('score-val');
+const weekendLine = document.getElementById('weekend-line');
+const endStats    = document.getElementById('end-stats');
+
+// ════════════════════════════════════════════════════════
+//  CURSOR
+// ════════════════════════════════════════════════════════
+document.addEventListener('mousemove', e => {
+  cursor.style.left = e.clientX + 'px';
+  cursor.style.top  = e.clientY + 'px';
+});
+
+// ════════════════════════════════════════════════════════
+//  SCREEN MANAGEMENT
+// ════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ════════════════════════════════════════════════════════
+//  HEARTS DISPLAY
+// ════════════════════════════════════════════════════════
+function renderHearts() {
+  heartsRow.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const filled = i < state.hearts;
+    const wrap = document.createElement('div');
+    wrap.className = 'heart-wrap';
+    wrap.id = 'heart-' + i;
+    wrap.innerHTML = `<svg class="heart-svg" viewBox="0 0 40 46.6278" fill="none" width="40" height="40">
+      <path d="${P.heart}" fill="${filled ? '#F64B7F' : 'rgba(246,75,127,0.2)'}"/>
+    </svg>`;
+    heartsRow.appendChild(wrap);
+  }
+}
+
+function shakeHeart(idx) {
+  const w = document.getElementById('heart-' + idx);
+  if (!w) return;
+  w.classList.remove('shake');
+  void w.offsetWidth;
+  w.classList.add('shake');
+}
+
+function updateHearts() {
+  for (let i = 0; i < 3; i++) {
+    const w = document.getElementById('heart-' + i);
+    if (!w) continue;
+    const svg = w.querySelector('path');
+    svg.setAttribute('fill', i < state.hearts ? '#F64B7F' : 'rgba(246,75,127,0.2)');
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  HUD UPDATES
+// ════════════════════════════════════════════════════════
+function updateHUD() {
+  // Timer
+  const s = Math.ceil(state.timeLeft);
+  const mm = String(Math.floor(s / 60)).padStart(2, '0');
+  const ss = String(s % 60).padStart(2, '0');
+  timerVal.textContent = mm + ':' + ss;
+  timerVal.classList.toggle('danger', state.timeLeft <= 10);
+
+  // Score
+  scoreVal.textContent = state.score.toLocaleString();
+
+  // Combo
+  if (state.combo > 1) {
+    comboBox.style.display = 'block';
+    comboVal.textContent = 'x' + state.combo;
+  } else {
+    comboBox.style.display = 'none';
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  WEEKEND LINE PULSE
+// ════════════════════════════════════════════════════════
+function pulseWeekendLine() {
+  weekendLine.classList.remove('pulse');
+  void weekendLine.offsetWidth;
+  weekendLine.classList.add('pulse');
+}
+
+// ════════════════════════════════════════════════════════
+//  SHOT RIPPLE EFFECT
+// ════════════════════════════════════════════════════════
+function createShot(x, y) {
+  const el = document.createElement('div');
+  el.className = 'shot-ring';
+  el.style.left = x + 'px';
+  el.style.top  = y + 'px';
+  document.body.appendChild(el);
+  el.addEventListener('animationend', () => el.remove());
+}
+
+// ════════════════════════════════════════════════════════
+//  SCORE POPUP
+// ════════════════════════════════════════════════════════
+function createScorePopup(x, y, points, combo) {
+  const el = document.createElement('div');
+  el.className = 'score-popup';
+  el.style.left = x + 'px';
+  el.style.top  = y + 'px';
+  el.style.fontSize = combo >= 3 ? '28px' : '22px';
+  el.textContent = '+' + points + (combo >= 2 ? ' x' + combo : '');
+  document.body.appendChild(el);
+  el.addEventListener('animationend', () => el.remove());
+}
+
+// ════════════════════════════════════════════════════════
+//  TARGET SPAWNING
+// ════════════════════════════════════════════════════════
+function getSpeed() {
+  const t = state.timeLeft;
+  const base = t > 40 ? 0.09 : t > 20 ? 0.13 : 0.18;
+  return (base + Math.random() * 0.025) * window.innerHeight;
+}
+function getSpawnInterval() {
+  const t = state.timeLeft;
+  return t > 40 ? 2.2 : t > 20 ? 1.7 : 1.2;
+}
+function getMaxTargets() {
+  const t = state.timeLeft;
+  return t > 40 ? 3 : t > 20 ? 4 : 6;
+}
+
+function spawnTarget() {
+  const typeIdx = Math.floor(Math.random() * TARGET_TYPES.length);
+  const type = TARGET_TYPES[typeIdx];
+  const maxX = Math.max(TARGET_W + 20, window.innerWidth - TARGET_W - 20);
+  const x = 20 + Math.random() * (maxX - 20);
+  const y = -TARGET_H - 10;
+
+  const el = document.createElement('div');
+  el.className = 'target-card';
+  el.style.left = x + 'px';
+  el.style.top  = y + 'px';
+  el.innerHTML = `
+    <div class="target-inner">
+      <div class="target-icon">
+        <svg viewBox="${type.vb}" fill="none" width="${type.iw}" height="${type.ih}">
+          <path d="${type.path}" fill="#F64B7F"/>
+        </svg>
+      </div>
+      <div class="target-label">${type.label1}${type.label2 ? '<br>' + type.label2 : ''}</div>
+      <div class="target-glow"></div>
+    </div>`;
+
+  gameArea.appendChild(el);
+
+  const target = { id: Date.now() + Math.random(), x, y, speed: getSpeed(), el, hit: false, missed: false, doneTime: 0 };
+  state.targets.push(target);
+}
+
+// ════════════════════════════════════════════════════════
+//  HIT / MISS
+// ════════════════════════════════════════════════════════
+function hitTarget(t, mx, my) {
+  if (t.hit || t.missed) return;
+  t.hit = true;
+  t.doneTime = performance.now();
+  t.el.classList.add('hit');
+  state.combo = Math.min(state.combo + 1, 10);
+  const pts = 100 * state.combo;
+  state.score += pts;
+  createScorePopup(t.x + TARGET_W / 2, t.y, pts, state.combo);
+  t.el.addEventListener('animationend', () => { t.el.remove(); }, { once: true });
+}
+
+function missTarget(t) {
+  if (t.hit || t.missed) return;
+  t.missed = true;
+  t.doneTime = performance.now();
+  t.el.classList.add('missed');
+  state.combo = 1;
+  state.hearts = Math.max(0, state.hearts - 1);
+  updateHearts();
+  shakeHeart(state.hearts); // shake the heart that just went empty
+  pulseWeekendLine();
+  t.el.addEventListener('animationend', () => { t.el.remove(); }, { once: true });
+}
+
+// ════════════════════════════════════════════════════════
+//  CLICK HANDLER
+// ════════════════════════════════════════════════════════
+gameArea.addEventListener('click', e => {
+  if (!state.running) return;
+  const mx = e.clientX, my = e.clientY;
+  createShot(mx, my);
+  for (const t of state.targets) {
+    if (t.hit || t.missed) continue;
+    if (mx >= t.x && mx <= t.x + TARGET_W && my >= t.y && my <= t.y + TARGET_H) {
+      hitTarget(t, mx, my);
+      break;
+    }
+  }
+});
+
+// ════════════════════════════════════════════════════════
+//  GAME LOOP
+// ════════════════════════════════════════════════════════
+function gameLoop(timestamp) {
+  if (!state.running) return;
+
+  if (lastTimestamp === 0) {
+    lastTimestamp = timestamp;
+    state.rafId = requestAnimationFrame(gameLoop);
+    return;
+  }
+
+  const delta = Math.min((timestamp - lastTimestamp) / 1000, 0.05);
+  lastTimestamp = timestamp;
+
+  // Update timer
+  state.timeLeft = Math.max(0, state.timeLeft - delta);
+
+  // Move targets & check miss
+  const lineY = window.innerHeight - HUD_BOT_H;
+  for (const t of state.targets) {
+    if (t.hit || t.missed) continue;
+    t.y += t.speed * delta;
+    t.el.style.top = t.y + 'px';
+    if (t.y + TARGET_H * 0.6 >= lineY) {
+      missTarget(t);
+    }
+  }
+
+  // Clean up finished targets
+  state.targets = state.targets.filter(t => !(t.hit || t.missed) || document.body.contains(t.el));
+
+  // Spawn
+  state.spawnTimer -= delta;
+  const active = state.targets.filter(t => !t.hit && !t.missed).length;
+  if (state.spawnTimer <= 0 && active < getMaxTargets()) {
+    spawnTarget();
+    state.spawnTimer = getSpawnInterval();
+  }
+
+  // Update HUD
+  updateHUD();
+
+  // Check end conditions
+  if (state.hearts <= 0) { endGame(false); return; }
+  if (state.timeLeft <= 0) { endGame(true); return; }
+
+  state.rafId = requestAnimationFrame(gameLoop);
+}
+
+// ════════════════════════════════════════════════════════
+//  START GAME
+// ════════════════════════════════════════════════════════
+function startGame() {
+  // Reset state
+  state.targets.forEach(t => t.el.remove());
+  state.targets = [];
+  state.score = 0;
+  state.combo = 1;
+  state.hearts = 3;
+  state.timeLeft = TOTAL_TIME;
+  state.spawnTimer = 1.0;
+  state.running = true;
+  lastTimestamp = 0;
+
+  // Reset HUD
+  renderHearts();
+  updateHUD();
+  comboBox.style.display = 'none';
+
+  showScreen('screen-play');
+  state.rafId = requestAnimationFrame(gameLoop);
+}
+
+// ════════════════════════════════════════════════════════
+//  END GAME
+// ════════════════════════════════════════════════════════
+function endGame(won) {
+  state.running = false;
+  if (state.rafId) cancelAnimationFrame(state.rafId);
+
+  // Stop targets
+  state.targets.forEach(t => {
+    if (!t.hit && !t.missed) { t.missed = true; t.el.remove(); }
+  });
+
+  setTimeout(() => {
+    // Badge
+    const badge = document.getElementById('end-badge');
+    const badgeText = document.getElementById('end-badge-text');
+    badgeText.textContent = won ? 'Mission Completed' : 'Mission Failed';
+    // Remove old badge-dot if any
+    badge.querySelector('.badge-dot') && badge.querySelector('.badge-dot').remove();
+    if (!won) {
+      const dot = document.createElement('span');
+      dot.className = 'badge-dot';
+      badge.prepend(dot);
+    }
+
+    // Title
+    document.getElementById('end-result').textContent = won ? 'Secure' : 'Destroy';
+
+    // Subtitle
+    document.getElementById('end-subtitle').textContent = won
+      ? 'All threats neutralized · Privacy integrity maintained'
+      : 'Threats overwhelmed the defense perimeter';
+
+    // Stats
+    endStats.innerHTML = '';
+    if (won) {
+      // Score (right-aligned) + divider + hearts
+      endStats.innerHTML = `
+        <div class="stat-block right">
+          <div class="stat-label right">Final Score</div>
+          <div class="stat-value right">${state.score.toLocaleString()}</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-block" style="padding:8px 18px">
+          <div class="stat-label">Hearts Left</div>
+          <div id="end-hearts-row" style="display:flex;gap:8px;margin-top:6px">${[0,1,2].map(i=>`
+            <div class="end-heart">
+              <svg viewBox="0 0 40 46.6278" fill="none" width="48" height="48" style="transform:scaleY(-1)">
+                <path d="${P.heart}" fill="${i < state.hearts ? '#F64B7F' : 'rgba(246,75,127,0.2)'}"/>
+              </svg>
+            </div>`).join('')}
+          </div>
+        </div>`;
+    } else {
+      endStats.innerHTML = `
+        <div class="stat-block center">
+          <div class="stat-label">Final Score</div>
+          <div class="stat-value">${state.score.toLocaleString()}</div>
+        </div>`;
+    }
+
+    // Button
+    document.getElementById('btn-restart-text').textContent = won ? 'Play Again' : 'Try Again';
+    showScreen('screen-end');
+  }, 250);
+}
+
+// ════════════════════════════════════════════════════════
+//  BUTTON LISTENERS
+// ════════════════════════════════════════════════════════
+document.getElementById('btn-start').addEventListener('click', startGame);
+document.getElementById('btn-restart').addEventListener('click', () => showScreen('screen-start'));
+</script>
+</body>
+</html>
