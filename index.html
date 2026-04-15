@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-PHKJHWM3GY"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-PHKJHWM3GY');
+</script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Defend Your Weekend</title>
@@ -672,6 +681,17 @@ function endGame(won) {
 // ════════════════════════════════════════════════════════
 document.getElementById('btn-start').addEventListener('click', startGame);
 document.getElementById('btn-restart').addEventListener('click', () => showScreen('screen-start'));
+// When player clicks Start
+gtag('event', 'game_start', { game_name: 'Defend Your Weekend' });
+
+// When game ends (call this when timer hits 0)
+gtag('event', 'game_over', {
+  game_name: 'Defend Your Weekend',
+  final_score: score  // replace with your score variable
+});
+
+// When player shoots a threat
+gtag('event', 'shoot', { game_name: 'Defend Your Weekend' });
 </script>
 </body>
 </html>
